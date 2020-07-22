@@ -1,46 +1,43 @@
-'''
-This is a sample class for a model. You may choose to use it as-is or make any changes to it.
-This has been provided just to give you an idea of how to structure your model class.
-'''
+from model import Model, DEBUG
 
-class Model_X:
+class Model_Head_Pose_Estimation(Model):
     '''
     Class for the Face Detection Model.
     '''
-    def __init__(self, model_name, device='CPU', extensions=None):
+    def __init__(self, model_path, device='CPU', extensions=None, prob_threshold=0.6):
         '''
         TODO: Use this to set your instance variables.
         '''
-        raise NotImplementedError
+        #raise NotImplementedError
+        Model.__init__(self, model_path=model_path, device=device, extensions=extensions, prob_threshold=prob_threshold)
+        self.model_name = 'Face Detection'
+        self.model_path = model_path
+        self.model_structure = model_path+'.xml'
+        self.model_weights = model_path+'.bin'
 
-    def load_model(self):
-        '''
-        TODO: You will need to complete this method.
-        This method is for loading the model to the device specified by the user.
-        If your model requires any Plugins, this is where you can load them.
-        '''
-        raise NotImplementedError
 
     def predict(self, image):
         '''
         TODO: You will need to complete this method.
         This method is meant for running predictions on the input image.
         '''
-        raise NotImplementedError
+        #raise NotImplementedError
+        prep_img = self.preprocess_input(image)
+        output_frame = self.exec_net.infer({self.input_blob : prep_img})
+        head_pose = self.preprocess_output(outputs=output_frame)
+        
+        return head_pose
 
-    def check_model(self):
-        raise NotImplementedError
-
-    def preprocess_input(self, image):
-    '''
-    Before feeding the data into the model for inference,
-    you might have to preprocess it. This function is where you can do that.
-    '''
-        raise NotImplementedError
 
     def preprocess_output(self, outputs):
-    '''
-    Before feeding the output of this model to the next model,
-    you might have to preprocess the output. This function is where you can do that.
-    '''
-        raise NotImplementedError
+        '''
+        Before feeding the output of this model to the next model,
+        you might have to preprocess the output. This function is where you can do that.
+        '''
+        #raise NotImplementedError
+        head_pose_output = []
+        head_pose_output.append(outputs['angle_y_fc'][0][0])
+        head_pose_output.append(outputs['angle_p_fc'][0][0])
+        head_pose_output.append(outputs['angle_r_fc'][0][0])
+
+        return head_pose_output
