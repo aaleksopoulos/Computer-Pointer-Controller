@@ -9,7 +9,7 @@ class Model_Facial_Landmarks_Detection(Model):
         TODO: Use this to set your instance variables.
         '''
         #raise NotImplementedError
-        Model.__init__(self, model_path=model_path, device=device, extensions=extensions, prob_threshold=prob_threshold)
+        Model.__init__(self, device=device, extensions=extensions, prob_threshold=prob_threshold)
         self.model_name = 'Face Detection'
         self.model_path = model_path
         self.model_structure = model_path+'.xml'
@@ -21,11 +21,12 @@ class Model_Facial_Landmarks_Detection(Model):
         This method is meant for running predictions on the input image.
         '''
         #raise NotImplementedError
+        
         prep_img = self.preprocess_input(image)
         output_frame = self.exec_net.infer({self.input_blob : prep_img})
-        tracked_list, ret_img = self.preprocess_output(output_frame, image)
+        left_eye, right_eye, tracked_list = self.preprocess_output(output_frame, image)
         
-        return tracked_list, ret_img
+        return left_eye, right_eye, tracked_list 
 
 
     def preprocess_output(self, outputs, image):
@@ -38,26 +39,38 @@ class Model_Facial_Landmarks_Detection(Model):
         height = image.shape[0]
         width = image.shape[1]
 
-        tracked_list = [] #to keep track what the model tracked
-        ret_img = image #the image to return
+        left_eye = []
+        right_eye = []
+        eye_box_coords = [] 
 
-        for fr in outputs:
-            if (fr[0][0][0] == -1): #if we have not detected anything, we break out
-                break
-            if (fr[0][0][2]>=self.prob_threshold): #if the probability is above the one stated
-                
-                x1 = int(fr[0][0][3]*width)
-                y1 = int(fr[0][0][4]*height)
-                x2 = int(fr[0][0][5]*width)
-                y2 = int(fr[0][0][6]*height)
-                if DEBUG:
-                    print("--------------------------")
-                    print("calucalated x1: ", x1)
-                    print("calucalated x2: ", x2)
-                    print("calucalated y1: ", y1)
-                    print("calucalated y2: ", y2)
-                    print("--------------------------")
-                tracked_list.append([x1, y1, x2, y2])
-                ret_img = image[y1:y2, x1:x2]
-        
-        return tracked_list, ret_img
+        #get the center of each eye
+        left_eye_x = int(outputs[0][0][0][0]*width)
+        left_eye_y = int(outputs[0][1][0][0]*height)
+
+        right_eye_x = int(outputs[0][2][0][0]*width)
+        right_eye_y = int(outputs[0][3][0][0]*height)
+
+        #get the coordinates of each bounding box
+        right_eye_x1 = right_eye_x-10
+        right_eye_x2 = right_eye_x+10
+        right_eye_y1 = right_eye_y-10
+        right_eye_y2 = right_eye_y+10
+
+        left_eye_x1 = left_eye_x-10
+        left_eye_x2 = left_eye_x+10
+        left_eye_y1 = left_eye_y-10
+        left_eye_y2 = left_eye_y+10
+
+        left_eye = image[left_eye_y1:left_eye_y2, left_eye_x1:left_eye_x2]
+        right_eye = image[right_eye_y1:right_eye_y2, right_eye_x1:right_eye_x2]
+        eye_box_coords = [[left_eye_x1, left_eye_y1,left_eye_x2, left_eye_y2], [right_eye_x1, right_eye_y1, right_eye_x2, right_eye_y2]]
+
+        if DEBUG:
+            print("--------------------------")
+            print("calucalated left_eye_x: ", left_eye_x)
+            print("calucalated left_eye_y: ", left_eye_y)
+            print("calucalated right_eye_x: ", right_eye_x)
+            print("calucalated right_eye_y: ", right_eye_y)
+            print("--------------------------")
+   
+        return left_eye, right_eye, eye_box_coords
