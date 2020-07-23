@@ -1,4 +1,4 @@
-from model import Model, DEBUG
+from src.model import Model, DEBUG
 
 class Model_Facial_Landmarks_Detection(Model):
     '''
@@ -9,7 +9,7 @@ class Model_Facial_Landmarks_Detection(Model):
         TODO: Use this to set your instance variables.
         '''
         #raise NotImplementedError
-        Model.__init__(self, device=device, extensions=extensions, prob_threshold=prob_threshold)
+        Model.__init__(self, model_path=model_path, device=device, extensions=extensions, prob_threshold=prob_threshold)
         self.model_name = 'Face Detection'
         self.model_path = model_path
         self.model_structure = model_path+'.xml'
@@ -24,9 +24,9 @@ class Model_Facial_Landmarks_Detection(Model):
         
         prep_img = self.preprocess_input(image)
         output_frame = self.exec_net.infer({self.input_blob : prep_img})
-        left_eye, right_eye, tracked_list = self.preprocess_output(output_frame, image)
+        left_eye, right_eye, eye_box_coords = self.preprocess_output(output_frame, image)
         
-        return left_eye, right_eye, tracked_list 
+        return left_eye, right_eye, eye_box_coords 
 
 
     def preprocess_output(self, outputs, image):

@@ -1,4 +1,4 @@
-from model import Model, DEBUG
+from src.model import Model, DEBUG
 
 class Model_Face_Detection(Model):
     '''
@@ -9,7 +9,7 @@ class Model_Face_Detection(Model):
         TODO: Use this to set your instance variables.
         '''
         #raise NotImplementedError
-        Model.__init__(self, device=device, extensions=extensions, prob_threshold=prob_threshold)
+        Model.__init__(self, model_path=model_path, device=device, extensions=extensions, prob_threshold=prob_threshold)
         self.model_name = 'Face Detection'
         self.model_path = model_path
         self.model_structure = model_path+'.xml'

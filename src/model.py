@@ -7,7 +7,7 @@ class Model:
     '''
     Class for the Face Detection Model.
     '''
-    def __init__(self, device='CPU', extensions=None, prob_threshold=0.6):
+    def __init__(self, model_path, device='CPU', extensions=None, prob_threshold=0.6):
         '''
         TODO: Use this to set your instance variables.
         '''
@@ -16,16 +16,25 @@ class Model:
         self.model_path= None #we cannot use this class
         self.device = device
         self.extensions = extensions
-        self.model_structure = None
-        self.model_weights = None
-        self.core = None
-        self.network = None
-        self.exec_net = None
-        self.input_blob = None
-        self.output_blob = None
-        self.input_shape = None
-        self.output_shape = None
+        self.model_structure = model_path+'.xml'
+        self.model_weights = model_path+'.bin'
         self.prob_threshold = prob_threshold
+        #check if we have provided a valid file for the model files
+        if not self.check_model():
+            exit(1)
+
+        #initialize the Inference Engine and get the instance of executable network
+        self.core = IECore()
+        self.network = self.core.read_network(model=self.model_structure, weights=self.model_weights)
+
+        #get the input and output blobs
+        self.input_blob = next(iter(self.network.inputs))
+        self.output_blob = next(iter(self.network.outputs))
+
+        #get the shape of the input and output
+        self.input_shape = self.network.inputs[self.input_blob].shape
+        self.output_shape = self.network.outputs[self.output_blob].shape
+
 
     def get_unsupported_layers(self):
         '''
@@ -51,13 +60,8 @@ class Model:
         If your model requires any Plugins, this is where you can load them.
         '''
         #raise NotImplementedError
-        #check if we have provided a valid file for the model files
-        if not self.check_model():
-            exit(1)
 
-        #initialize the Inference Engine and get the instance of executable network
-        self.core = IECore()
-        self.network = self.core.read_network(model=self.model_structure, weights=self.model_weights)
+
         self.exec_net = self.core.load_network(network=self.network, device_name=self.device, num_requests=1)
 
         #check if there are any unsupported layers
@@ -80,14 +84,6 @@ class Model:
         
         #load to network to get the executable network
         self.exec_network = self.core.load_network(self.network, self.device)
-
-        #get the input and output blobs
-        self.input_blob = next(iter(self.network.inputs))
-        self.output_blob = next(iter(self.network.outputs))
-
-        #get the shape of the input and output
-        self.input_shape = self.network.inputs[self.input_blob].shape
-        self.output_shape = self.network.outputs[self.output_blob].shape
 
         return self.exec_network
 
