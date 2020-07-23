@@ -8,6 +8,7 @@ from src.face_detection import Model_Face_Detection
 from src.facial_landmarks_detection import Model_Facial_Landmarks_Detection
 from src.head_pose_estimation import Model_Head_Pose_Estimation
 from src.gaze_estimation import Model_Gaze_Estimation
+from src.mouse_controller import MouseController
 
 DEBUG = True #helper function
 
@@ -37,6 +38,8 @@ def build_argparser():
                         help="Probability threshold for the models.")
     parser.add_argument("-d", "--device", type=str, default="CPU",
                         help="Specify the target device to run inference on: CPU, GPU, FPGA, MYRIAD. Default: CPU")
+    parser.add_argument("-sp", "--show_preview", default=True, type=bool,
+                        help="Set to False if no preview video output is needed. Default: True")
     
     return parser
 
@@ -87,16 +90,18 @@ def main():
             exit(1)
         if DEBUG:
             print('Path to : ', modelPath, " exists.")
-    
+
     if inputFile.lower()=='cam':
-        inputFile = 0
-    
-    #check if the input file exists
-    if (inputFile!=0) and (not os.path.isfile(inputFile)):
-        print('Could not fine the input file : ', inputFile)
-        exit(1)
-    elif DEBUG:
-        print('found input file : ', inputFile)
+        inputFeeder = InputFeeder("cam")
+    else:
+        if not os.path.isfile(inputFile):
+            print('Could not fine the input file : ', inputFile)
+            exit(1)
+        elif DEBUG:
+            print('found input file : ', inputFile)
+        inputFeeder = InputFeeder(input_type="video", input_file=inputFile)
+
+    startTime = time.time()
 
     #initialize the models
     fdmodel = Model_Face_Detection(model_path=faceDetectionModelPath, device=device, extensions=cpu_extension, prob_threshold=prob_threshold)
@@ -104,5 +109,73 @@ def main():
     hpmodel = Model_Head_Pose_Estimation(model_path=headPoseModelPath, device=device, extensions=cpu_extension, prob_threshold=prob_threshold)
     gemodel = Model_Gaze_Estimation(model_path=modelPath, device=device, extensions=cpu_extension, prob_threshold=prob_threshold)
 
+    #load the models
+    fdmodel.load_model()
+    fldmodel.load_model()
+    hpmodel.load_model()
+    gemodel.load_model()
+
+    modelLoadTime = time.time() - startTime
+
+    print('Time to load the models: {:8.5f} seconds.'.format(modelLoadTime))
+
+    inputFeeder.load_data()
+    mouseController = MouseController('medium','fast')
+
+    counter = 0
+    inferenceTime = 0
+
+
+    width, height = inputFeeder.get_size()
+    print("width: ", width, " ,height: ", height)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    vid_capt = cv2.VideoWriter('output_video.mp4', fourcc, 25, (width,height))
+
+    for  frame in inputFeeder.next_batch():
+
+        if frame is None:
+            break #finished the loop
+        else:
+            #to cancel easily
+            key_pressed = cv2.waitKey(60)
+            if key_pressed == 27:
+                break 
+            counter+=1
+            startInference = time.time() #start the inference
+            print('been here')
+            #get the face and its coordinates from the face detection model
+            faceCoords, faceImg = fdmodel.predict(frame)
+            #cv2.imshow('face image', faceImg)
+            #cv2.waitKey(0)
+            print('got out of fdmodel')
+            #get the eye positions and the bounding boxes
+            left_eye, right_eye, eye_box_coords = fldmodel.predict(faceImg)
+            print('got out of fldmodel')
+            #get the angle of the head pose
+            head_pose_angle = hpmodel.predict(faceImg)
+
+            #get the gaze vector
+            mouse_coords, gaze_vector = gemodel.predict(left_eye, right_eye, head_pose_angle)
+
+            inferenceTime += time.time()-startInference #done with inferencing
+
+            #update the cursor position every 5 frames
+            if counter%5 == 0:
+                print('been here')
+                mouseController.move(mouse_coords[0], mouse_coords[1])
+                cv2.imshow('video', cv2.resize(frame, (500, 500)))
+
+            if args.show_preview and False:
+                #show the face
+                print('facecoords: ', faceCoords)
+                cv2.rectangle(frame, (faceCoords[0], faceCoords[1]), (faceCoords[2], faceCoords[3]), (255, 255, 0), 2)
+                #show the eyes
+                cv2.rectangle(frame, (faceCoords[0]+eye_box_coords[0][0], faceCoords[1]+eye_box_coords[0][1]), (faceCoords[0]+eye_box_coords[0][2], faceCoords[1]+eye_box_coords[0][3]), (255, 255, 0), 2)
+                cv2.rectangle(frame, (faceCoords[0]+eye_box_coords[1][0], faceCoords[1]+eye_box_coords[1][1]), (faceCoords[0]+eye_box_coords[1][2], faceCoords[1]+eye_box_coords[1][3]), (255, 255, 0), 2)
+                #write out the gaze vector
+                cv2.putText(frame, "Gaze Cordss: yaw= {:.2f} , pitch= {:.2f} , roll= {:.2f}".format(gaze_vector[0], gaze_vector[1], gaze_vector[2]), (20, 40), cv2.FONT_HERSHEY_COMPLEX,1, (255, 255, 0), 2)
+
+
+            vid_capt.write(frame)
 if __name__ == '__main__':
     main()

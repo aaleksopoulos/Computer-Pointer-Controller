@@ -39,27 +39,30 @@ class Model_Facial_Landmarks_Detection(Model):
         height = image.shape[0]
         width = image.shape[1]
 
+        offset = 15
+
         left_eye = []
         right_eye = []
         eye_box_coords = [] 
 
-        #get the center of each eye
-        left_eye_x = int(outputs[0][0][0][0]*width)
-        left_eye_y = int(outputs[0][1][0][0]*height)
 
-        right_eye_x = int(outputs[0][2][0][0]*width)
-        right_eye_y = int(outputs[0][3][0][0]*height)
+        #get the center of each eye
+        left_eye_x = int(outputs[self.output_blob][0][0][0][0]*width)
+        left_eye_y = int(outputs[self.output_blob][0][1][0][0]*height)
+
+        right_eye_x = int(outputs[self.output_blob][0][2][0][0]*width)
+        right_eye_y = int(outputs[self.output_blob][0][3][0][0]*height)
 
         #get the coordinates of each bounding box
-        right_eye_x1 = right_eye_x-10
-        right_eye_x2 = right_eye_x+10
-        right_eye_y1 = right_eye_y-10
-        right_eye_y2 = right_eye_y+10
+        right_eye_x1 = right_eye_x-offset
+        right_eye_x2 = right_eye_x+offset
+        right_eye_y1 = right_eye_y-offset
+        right_eye_y2 = right_eye_y+offset
 
-        left_eye_x1 = left_eye_x-10
-        left_eye_x2 = left_eye_x+10
-        left_eye_y1 = left_eye_y-10
-        left_eye_y2 = left_eye_y+10
+        left_eye_x1 = left_eye_x-offset
+        left_eye_x2 = left_eye_x+offset
+        left_eye_y1 = left_eye_y-offset
+        left_eye_y2 = left_eye_y+offset
 
         left_eye = image[left_eye_y1:left_eye_y2, left_eye_x1:left_eye_x2]
         right_eye = image[right_eye_y1:right_eye_y2, right_eye_x1:right_eye_x2]

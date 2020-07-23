@@ -1,7 +1,7 @@
 import os, cv2
 from openvino.inference_engine import IECore
 
-DEBUG = False
+DEBUG = True
 
 class Model:
     '''
@@ -109,8 +109,8 @@ class Model:
         you might have to preprocess it. This function is where you can do that.
         '''     
         #raise NotImplementedError
-        height = self.input_shape[2]
-        width = self.input_shape[3]
+        height = self.input_shape[3]
+        width = self.input_shape[2]
         img = cv2.resize(image, (width, height))
         img = img.transpose((2,0,1))
         return img.reshape(1, 3, width, height)

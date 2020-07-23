@@ -42,7 +42,7 @@ class Model_Gaze_Estimation(Model):
         '''
         #raise NotImplementedError
 
-        gaze_vector = outputs[self.output_blob[0][0]]
+        gaze_vector = outputs[self.output_blob[0]][0]
         angle_r_fc = head_pose_angle[2]
         cos = math.cos(angle_r_fc*math.pi/180)
         sin = math.sin(angle_r_fc*math.pi/180)

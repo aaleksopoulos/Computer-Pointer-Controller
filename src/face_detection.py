@@ -22,9 +22,11 @@ class Model_Face_Detection(Model):
         '''
         #raise NotImplementedError
         prep_img = self.preprocess_input(image)
+
         output_frame = self.exec_net.infer({self.input_blob : prep_img})
+
         tracked_list, ret_img = self.preprocess_output(output_frame, image)
-        
+
         return tracked_list, ret_img
 
 
@@ -37,19 +39,22 @@ class Model_Face_Detection(Model):
         #get the image width and height
         height = image.shape[0]
         width = image.shape[1]
+        
 
         tracked_list = [] #to keep track what the model tracked
-        ret_img = image #the image to return
+        ret_img = image
 
-        for fr in outputs:
-            if (fr[0][0][0] == -1): #if we have not detected anything, we break out
+        for fr in outputs[self.output_blob][0][0]:
+            print(fr)
+            if (fr[0] == -1): #if we have not detected anything, we break out
                 break
-            if (fr[0][0][2]>=self.prob_threshold): #if the probability is above the one stated
-                
-                x1 = int(fr[0][0][3]*width)
-                y1 = int(fr[0][0][4]*height)
-                x2 = int(fr[0][0][5]*width)
-                y2 = int(fr[0][0][6]*height)
+
+            if (fr[2]>=self.prob_threshold): #if the probability is above the one stated
+                print('been hereddddddd')
+                x1 = int(fr[3]*width)
+                y1 = int(fr[4]*height)
+                x2 = int(fr[5]*width)
+                y2 = int(fr[6]*height)
                 if DEBUG:
                     print("--------------------------")
                     print("calucalated x1: ", x1)

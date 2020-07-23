@@ -39,6 +39,8 @@ class InputFeeder:
                 _, frame=self.cap.read()
             yield frame
 
+    def get_size(self):
+        return int(self.cap.get(3)), int(self.cap.get(4))
 
     def close(self):
         '''
