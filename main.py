@@ -125,7 +125,6 @@ def main():
     counter = 0
     inferenceTime = 0
 
-
     width, height = inputFeeder.get_size()
     print("width: ", width, " ,height: ", height)
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -142,40 +141,53 @@ def main():
                 break 
             counter+=1
             startInference = time.time() #start the inference
-            print('been here')
-            #get the face and its coordinates from the face detection model
-            faceCoords, faceImg = fdmodel.predict(frame)
-            #cv2.imshow('face image', faceImg)
-            #cv2.waitKey(0)
-            print('got out of fdmodel')
+ 
+            #get the face coordinates from the face detection model
+            faceCoords = fdmodel.predict(frame)
+            if DEBUG:
+                print('-------------len of faceCoords : ', len(faceCoords))
+                print('--------------------faceCoords : ', faceCoords)
+            
+            #extract the image of the face from the frame
+            faceImg = frame[faceCoords[0][1]:faceCoords[0][3], faceCoords[0][0]:faceCoords[0][2]] 
+            if False:
+                cv2.imshow('face image', faceImg)
+                cv2.waitKey(0)
+                print('got out of fdmodel')
             #get the eye positions and the bounding boxes
             left_eye, right_eye, eye_box_coords = fldmodel.predict(faceImg)
-            print('got out of fldmodel')
+
             #get the angle of the head pose
             head_pose_angle = hpmodel.predict(faceImg)
 
             #get the gaze vector
-            mouse_coords, gaze_vector = gemodel.predict(left_eye, right_eye, head_pose_angle)
+            gaze_vector, mouse_coords = gemodel.predict(left_eye, right_eye, head_pose_angle)
 
             inferenceTime += time.time()-startInference #done with inferencing
 
-            #update the cursor position every 5 frames
-            if counter%5 == 0:
-                print('been here')
+            #update the cursor position every 3 frames
+            if counter%3 == 0:
                 mouseController.move(mouse_coords[0], mouse_coords[1])
                 cv2.imshow('video', cv2.resize(frame, (500, 500)))
 
-            if args.show_preview and False:
+            if args.show_preview:
                 #show the face
-                print('facecoords: ', faceCoords)
-                cv2.rectangle(frame, (faceCoords[0], faceCoords[1]), (faceCoords[2], faceCoords[3]), (255, 255, 0), 2)
+                #print('facecoords: ', faceCoords)
+                cv2.rectangle(frame, (faceCoords[0][0], faceCoords[0][1]), (faceCoords[0][2], faceCoords[0][3]), (255, 255, 0), 2)
                 #show the eyes
-                cv2.rectangle(frame, (faceCoords[0]+eye_box_coords[0][0], faceCoords[1]+eye_box_coords[0][1]), (faceCoords[0]+eye_box_coords[0][2], faceCoords[1]+eye_box_coords[0][3]), (255, 255, 0), 2)
-                cv2.rectangle(frame, (faceCoords[0]+eye_box_coords[1][0], faceCoords[1]+eye_box_coords[1][1]), (faceCoords[0]+eye_box_coords[1][2], faceCoords[1]+eye_box_coords[1][3]), (255, 255, 0), 2)
+                cv2.rectangle(frame, (faceCoords[0][0]+eye_box_coords[0][0], faceCoords[0][1]+eye_box_coords[0][1]), (faceCoords[0][0]+eye_box_coords[0][2], faceCoords[0][1]+eye_box_coords[0][3]), (255, 255, 0), 2)
+                cv2.rectangle(frame, (faceCoords[0][0]+eye_box_coords[1][0], faceCoords[0][1]+eye_box_coords[1][1]), (faceCoords[0][0]+eye_box_coords[1][2], faceCoords[0][1]+eye_box_coords[1][3]), (255, 255, 0), 2)
                 #write out the gaze vector
+                print('gaze vector : ', gaze_vector)
                 cv2.putText(frame, "Gaze Cordss: yaw= {:.2f} , pitch= {:.2f} , roll= {:.2f}".format(gaze_vector[0], gaze_vector[1], gaze_vector[2]), (20, 40), cv2.FONT_HERSHEY_COMPLEX,1, (255, 255, 0), 2)
-
+                cv2.imshow('preview', frame)
 
             vid_capt.write(frame)
+
+    print('Time spent for inference: {:8.5f} seconds.'.format(inferenceTime))
+    print('fps : ', round(counter/inferenceTime))
+    #clean up the mess
+    cv2.destroyAllWindows()
+    inputFeeder.close()
 if __name__ == '__main__':
     main()

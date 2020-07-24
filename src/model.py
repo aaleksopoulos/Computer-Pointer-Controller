@@ -109,8 +109,6 @@ class Model:
         you might have to preprocess it. This function is where you can do that.
         '''     
         #raise NotImplementedError
-        height = self.input_shape[3]
-        width = self.input_shape[2]
-        img = cv2.resize(image, (width, height))
+        img = cv2.resize(image, (self.input_shape[3], self.input_shape[2]))
         img = img.transpose((2,0,1))
-        return img.reshape(1, 3, width, height)
+        return img.reshape(1, *img.shape)

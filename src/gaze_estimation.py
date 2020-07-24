@@ -31,8 +31,10 @@ class Model_Gaze_Estimation(Model):
         output_frame = self.exec_net.infer({'left_eye_image':prep_left_eye, 'right_eye_image':pre_right_eye, 'head_pose_angles':head_pose_angle})
 
         gaze_vector, mouse_coords = self.preprocess_output(output_frame, head_pose_angle)
-
         return gaze_vector, mouse_coords
+
+        #gaze_vector  = self.preprocess_output(output_frame, head_pose_angle)
+        #return gaze_vector
 
 
     def preprocess_output(self, outputs, head_pose_angle):
@@ -52,3 +54,4 @@ class Model_Gaze_Estimation(Model):
         point_y = -1*gaze_vector[0]*sin + gaze_vector[1]*cos
 
         return gaze_vector, (point_x, point_y)
+        #return gaze_vector
