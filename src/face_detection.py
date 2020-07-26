@@ -42,7 +42,7 @@ class Model_Face_Detection(Model):
         tracked_list = [] #to keep track what the model tracked
 
         for fr in outputs[self.output_blob][0][0]:
-            print(fr)
+
             if (fr[0] == -1):
                 break
 
