@@ -1,7 +1,7 @@
 import os, cv2
 from openvino.inference_engine import IECore
 
-DEBUG = True
+DEBUG = False #helper attribute
 
 class Model:
     '''
