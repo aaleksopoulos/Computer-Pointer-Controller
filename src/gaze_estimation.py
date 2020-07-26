@@ -1,5 +1,4 @@
 from src.model import Model, DEBUG
-import math
 
 class Model_Gaze_Estimation(Model):
     '''
