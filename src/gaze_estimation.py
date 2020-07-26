@@ -30,14 +30,10 @@ class Model_Gaze_Estimation(Model):
 
         output_frame = self.exec_net.infer({'left_eye_image':prep_left_eye, 'right_eye_image':pre_right_eye, 'head_pose_angles':head_pose_angle})
 
-        gaze_vector, mouse_coords = self.preprocess_output(output_frame, head_pose_angle)
-        return gaze_vector, mouse_coords
+        gaze_vector = self.preprocess_output(output_frame)
+        return gaze_vector
 
-        #gaze_vector  = self.preprocess_output(output_frame, head_pose_angle)
-        #return gaze_vector
-
-
-    def preprocess_output(self, outputs, head_pose_angle):
+    def preprocess_output(self, outputs):
         '''
         Before feeding the output of this model to the next model,
         you might have to preprocess the output. This function is where you can do that.
@@ -45,13 +41,5 @@ class Model_Gaze_Estimation(Model):
         #raise NotImplementedError
 
         gaze_vector = outputs[self.output_blob[0]][0]
-        angle_r_fc = head_pose_angle[2]
-        cos = math.cos(angle_r_fc*math.pi/180)
-        sin = math.sin(angle_r_fc*math.pi/180)
 
-        #calculate the x and y values of the mouse pointer
-        point_x = gaze_vector[0]*cos + gaze_vector[1]*sin
-        point_y = -1*gaze_vector[0]*sin + gaze_vector[1]*cos
-
-        return gaze_vector, (point_x, point_y)
-        #return gaze_vector
+        return gaze_vector

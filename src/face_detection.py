@@ -47,7 +47,6 @@ class Model_Face_Detection(Model):
                 break
 
             if (fr[2]>=self.prob_threshold): #if the probability is above the one stated
-                print('been hereddddddd')
                 x1 = int(fr[3]*width)
                 y1 = int(fr[4]*height)
                 x2 = int(fr[5]*width)

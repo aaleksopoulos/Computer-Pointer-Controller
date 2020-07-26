@@ -41,6 +41,9 @@ class InputFeeder:
 
     def get_size(self):
         return int(self.cap.get(3)), int(self.cap.get(4))
+    
+    def get_fps(self):
+        return(self.cap.get(cv2.CAP_PROP_FPS))
 
     def close(self):
         '''

@@ -1,5 +1,5 @@
   
-import cv2, os, time, platform
+import cv2, os, time, platform, math
 import numpy as np
 from argparse import ArgumentParser
 from src.input_feeder import InputFeeder
@@ -116,19 +116,39 @@ def main():
     gemodel.load_model()
 
     modelLoadTime = time.time() - startTime
+    #calculate the precision, taking in mind that we run all models on the same precision
+    precision = gazeEstimationModelPath.split('/')[-2]
+    if 'INT' in precision:
+        precision=8
+    else:
+        precision = precision[-2:]
+    if DEBUG:
+        print('------precision : ', precision)
+    print('Time to load the models for precision {}: {:8.5f} seconds.'.format(precision, modelLoadTime))
 
-    print('Time to load the models: {:8.5f} seconds.'.format(modelLoadTime))
-
+    #initialize
     inputFeeder.load_data()
     mouseController = MouseController('medium','fast')
 
+    #initialize counter
     counter = 0
     inferenceTime = 0
 
     width, height = inputFeeder.get_size()
-    print("width: ", width, " ,height: ", height)
+    #get the fps os the video
+    vid_fps = int(inputFeeder.get_fps()/10)
+
+    if DEBUG:
+        print("width: ", width, " ,height: ", height)
+        print('fps : ', vid_fps)
+    #set up the videowriter
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    vid_capt = cv2.VideoWriter('output_video.mp4', fourcc, 25, (width,height))
+    
+    #claculate the ratio of the image, in order the height to be 500 px
+    ratio = 500/height
+    vid_capt = cv2.VideoWriter('output_video.mp4', fourcc, vid_fps, (int(ratio*width),500))
+    if args.show_preview:
+        prev_capt = cv2.VideoWriter('previw_video.mp4', fourcc, vid_fps, (int(ratio*width),500))
 
     for  frame in inputFeeder.next_batch():
 
@@ -161,33 +181,45 @@ def main():
             head_pose_angle = hpmodel.predict(faceImg)
 
             #get the gaze vector
-            gaze_vector, mouse_coords = gemodel.predict(left_eye, right_eye, head_pose_angle)
+            gaze_vector = gemodel.predict(left_eye, right_eye, head_pose_angle)
 
             inferenceTime += time.time()-startInference #done with inferencing
 
+            if DEBUG:
+                print('gaze vector : ', gaze_vector)
+            #calculate the x and y values of the mouse pointer
+            angle_r_fc = head_pose_angle[2]
+            cos = math.cos(angle_r_fc*math.pi/180)
+            sin = math.sin(angle_r_fc*math.pi/180)
+            point_x = gaze_vector[0]*cos + gaze_vector[1]*sin
+            point_y = -1*gaze_vector[0]*sin + gaze_vector[1]*cos
             #update the cursor position every 3 frames
             if counter%3 == 0:
-                mouseController.move(mouse_coords[0], mouse_coords[1])
-                cv2.imshow('video', cv2.resize(frame, (500, 500)))
+                mouseController.move(point_x, point_y)
+            cv2.imshow('video', cv2.resize(frame, (int(ratio*width),500)))
+            vid_capt.write(cv2.resize(frame, (int(ratio*width),500)))
 
             if args.show_preview:
                 #show the face
-                #print('facecoords: ', faceCoords)
                 cv2.rectangle(frame, (faceCoords[0][0], faceCoords[0][1]), (faceCoords[0][2], faceCoords[0][3]), (255, 255, 0), 2)
                 #show the eyes
                 cv2.rectangle(frame, (faceCoords[0][0]+eye_box_coords[0][0], faceCoords[0][1]+eye_box_coords[0][1]), (faceCoords[0][0]+eye_box_coords[0][2], faceCoords[0][1]+eye_box_coords[0][3]), (255, 255, 0), 2)
                 cv2.rectangle(frame, (faceCoords[0][0]+eye_box_coords[1][0], faceCoords[0][1]+eye_box_coords[1][1]), (faceCoords[0][0]+eye_box_coords[1][2], faceCoords[0][1]+eye_box_coords[1][3]), (255, 255, 0), 2)
                 #write out the gaze vector
-                print('gaze vector : ', gaze_vector)
                 cv2.putText(frame, "Gaze Cordss: yaw= {:.2f} , pitch= {:.2f} , roll= {:.2f}".format(gaze_vector[0], gaze_vector[1], gaze_vector[2]), (20, 40), cv2.FONT_HERSHEY_COMPLEX,1, (255, 255, 0), 2)
-                cv2.imshow('preview', frame)
+                
+                cv2.imshow('preview', cv2.resize(frame, (int(ratio*width),500)))
+                #write it to a video
+                prev_capt.write(cv2.resize(frame, (int(ratio*width),500)))
 
-            vid_capt.write(frame)
+            
 
     print('Time spent for inference: {:8.5f} seconds.'.format(inferenceTime))
     print('fps : ', round(counter/inferenceTime))
     #clean up the mess
     cv2.destroyAllWindows()
     inputFeeder.close()
+
+
 if __name__ == '__main__':
     main()
