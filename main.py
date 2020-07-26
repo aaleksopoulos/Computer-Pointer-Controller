@@ -1,5 +1,5 @@
   
-import cv2, os, time, platform, math
+import cv2, os, time, platform, math, psutil
 import numpy as np
 from argparse import ArgumentParser
 from src.input_feeder import InputFeeder
@@ -10,7 +10,13 @@ from src.head_pose_estimation import Model_Head_Pose_Estimation
 from src.gaze_estimation import Model_Gaze_Estimation
 from src.mouse_controller import MouseController
 
-DEBUG = True #helper function
+DEBUG = False #helper attrubute
+
+def memory_usage():
+    # return the memory usage in MB
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info()[0] / float(2 ** 20)
+    return mem
 
 def build_argparser():
     parser = ArgumentParser()
@@ -38,8 +44,8 @@ def build_argparser():
                         help="Probability threshold for the models.")
     parser.add_argument("-d", "--device", type=str, default="CPU",
                         help="Specify the target device to run inference on: CPU, GPU, FPGA, MYRIAD. Default: CPU")
-    parser.add_argument("-sp", "--show_preview", default=True, type=bool,
-                        help="Set to False if no preview video output is needed. Default: True")
+    parser.add_argument("-sp", "--show_preview", default=False, type=bool,
+                        help="Set to False if no preview video output is needed. Default: False")
     
     return parser
 
@@ -124,7 +130,7 @@ def main():
         precision = precision[-2:]
     if DEBUG:
         print('------precision : ', precision)
-    print('Time to load the models for precision {}: {:8.5f} seconds.'.format(precision, modelLoadTime))
+    #print('Time to load the models for precision {}: {:8.5f} seconds.'.format(precision, modelLoadTime))
 
     #initialize
     inputFeeder.load_data()
@@ -191,11 +197,11 @@ def main():
             angle_r_fc = head_pose_angle[2]
             cos = math.cos(angle_r_fc*math.pi/180)
             sin = math.sin(angle_r_fc*math.pi/180)
-            point_x = gaze_vector[0]*cos + gaze_vector[1]*sin
-            point_y = -1*gaze_vector[0]*sin + gaze_vector[1]*cos
+            mouse_x = gaze_vector[0]*cos + gaze_vector[1]*sin
+            mouse_y = -1*gaze_vector[0]*sin + gaze_vector[1]*cos
             #update the cursor position every 3 frames
             if counter%3 == 0:
-                mouseController.move(point_x, point_y)
+                mouseController.move(mouse_x, mouse_y)
             cv2.imshow('video', cv2.resize(frame, (int(ratio*width),500)))
             vid_capt.write(cv2.resize(frame, (int(ratio*width),500)))
 
@@ -214,8 +220,23 @@ def main():
 
             
 
-    print('Time spent for inference: {:8.5f} seconds.'.format(inferenceTime))
-    print('fps : ', round(counter/inferenceTime))
+    #print('Time spent for inference: {:8.5f} seconds.'.format(inferenceTime))
+    #print('fps : ', round(counter/inferenceTime))
+    mem = memory_usage()
+    fw = open("run_metrics_" + device + '_' + str(prob_threshold)+ '_' + str(precision) + ".txt", 'a')
+    fw.write("="*135 + '\n') 
+    fw.write("|" + '{:^30}'.format('Face Detection') + '|' + '{:^102}'.format(faceDetectionModelPath) + '|\n')
+    fw.write("|" + '{:^30}'.format('Facial Landmarks Detection') + '|' + '{:^102}'.format(facialLandmarksDetectionmodelPath) + '|\n')
+    fw.write("|" + '{:^30}'.format('Head Pose Estimation') + '|' + '{:^102}'.format(headPoseModelPath) + '|\n')
+    fw.write("|" + '{:^30}'.format('Gaze Estimation') + '|' + '{:^102}'.format(gazeEstimationModelPath) + '|\n')
+    fw.write("|" + '{:^30}'.format('device') + '|' + '{:^102}'.format(str(device)) + '|\n')
+    fw.write("|" + '{:^30}'.format('show preview') + '|' + '{:^102}'.format(str(args.show_preview)) + '|\n')
+    fw.write("|" + '{:^30}'.format('prob threshold') + '|' + '{:^102}'.format(str(prob_threshold)) + '|\n')
+    fw.write("|" + '{:^30}'.format('time to load the models (secs)') + '|' + '{:^102}'.format('{:7.3f}'.format(modelLoadTime)) + '|\n')
+    fw.write("|" + '{:^30}'.format('inferece time (secs)') + '|' + '{:^102}'.format('{:7.3f}'.format(inferenceTime)) + '|\n')
+    fw.write("|" + '{:^30}'.format('fps') + '|' + '{:^102}'.format((round(counter/inferenceTime))) + '|\n')
+    fw.write("|" + '{:^30}'.format('memory used (Mb)') + '|' + '{:^102}'.format('{:07.3f}'.format(mem)) + '|\n')
+    fw.write("="*135+'\n') 
     #clean up the mess
     cv2.destroyAllWindows()
     inputFeeder.close()
