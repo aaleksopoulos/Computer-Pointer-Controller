@@ -78,6 +78,9 @@ class Model:
 
         #recheck for unsupported layers, and exit if there are any
         unsupported_layers = self.get_unsupported_layers()
+        if (len(unsupported_layers)>0) and (self.device!='CPU'):
+            print("There are  unsupported layers, exiting...")
+            exit(1)
         if (len(unsupported_layers)>0):
             print("After adding CPU extension, there are still unsupported layers, exiting...")
             exit(1)
