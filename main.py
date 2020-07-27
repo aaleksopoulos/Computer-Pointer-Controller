@@ -1,4 +1,3 @@
-  
 import cv2, os, time, platform, math, psutil
 import numpy as np
 from argparse import ArgumentParser
@@ -11,12 +10,6 @@ from src.gaze_estimation import Model_Gaze_Estimation
 from src.mouse_controller import MouseController
 
 DEBUG = False #helper attrubute
-
-def memory_usage():
-    # return the memory usage in MB
-    process = psutil.Process(os.getpid())
-    mem = process.memory_info()[0] / float(2 ** 20)
-    return mem
 
 def build_argparser():
     parser = ArgumentParser()
@@ -33,21 +26,26 @@ def build_argparser():
     parser.add_argument("-ge", "--gazeEstimationModel", type=str,
                         default='src/models/intel/gaze-estimation-adas-0002/FP32/gaze-estimation-adas-0002', 
                         help="Path to the Gaze Estimation model, without any extensions. Default to current project's file - FP32 precision.")
-    parser.add_argument("-i", "--input", type=str,
-                        default='bin/demo.mp4',
+    parser.add_argument("-i", "--input", type=str, default='bin/demo.mp4',
                         help=" Path to video file or enter CAM to use the webcam. Default to the video provided by the instructors")
-    parser.add_argument("-l", "--cpu_extension", required=False, type=str,
-                        default=None,
+    parser.add_argument("-l", "--cpu_extension", required=False, type=str, default=None,
                         help="path the CPU exntension file - not requirred for OpenVINO 2019R3 and later. Auto for OpenVINO to try and figure the extension by itself")
-    parser.add_argument("-prob", "--prob_threshold", required=False, type=float,
-                        default=0.6,
+    parser.add_argument("-prob", "--prob_threshold", required=False, type=float, default=0.6,
                         help="Probability threshold for the models.")
     parser.add_argument("-d", "--device", type=str, default="CPU",
                         help="Specify the target device to run inference on: CPU, GPU, FPGA, MYRIAD. Default: CPU")
-    parser.add_argument("-sp", "--show_preview", default=False, type=bool,
-                        help="Set to False if no preview video output is needed. Default: False")
+    parser.add_argument("-sp", "--show_preview", type=str, default=False,
+                        help="Whether preview video output is needed [contains what the models tracked]. Default: False")
+    parser.add_argument("-sv", "--show_video", type=str, default=True,
+                        help="Whether showing the input video as it is tracked on not. Default: True")
     
     return parser
+
+def memory_usage():
+    # return the memory usage in MB
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info()[0] / float(2 ** 20)
+    return mem
 
 def get_cpu_extension():
     #NOTE Only applicable in the case of OPENVino version 2019R3 and lower
@@ -150,10 +148,27 @@ def main():
     #set up the videowriter
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     
+    #for a reaason, argparser could not read correctly boolean values, so a workaround was needed
+    if str(args.show_video).lower() == 'true':
+        show_video = True
+    elif str(args.show_video).lower() == 'false':
+        show_video = False
+    else:
+        print('Not correct value passed for --show_video argument, exiting...')
+        exit(1)
+    
+    if str(args.show_preview).lower() == 'true':
+        show_preview = True
+    elif str(args.show_preview).lower() == 'false':
+        show_preview = False
+    else:
+        print('Not correct value passed for --show_preview argument, exiting...')
+        exit(1)
+
     #claculate the ratio of the image, in order the height to be 500 px
     ratio = 500/height
     vid_capt = cv2.VideoWriter('output_video.mp4', fourcc, vid_fps, (int(ratio*width),500))
-    if args.show_preview:
+    if show_preview:
         prev_capt = cv2.VideoWriter('previw_video.mp4', fourcc, vid_fps, (int(ratio*width),500))
 
     for  frame in inputFeeder.next_batch():
@@ -202,7 +217,8 @@ def main():
             #update the cursor position every 3 frames
             if counter%3 == 0:
                 mouseController.move(mouse_x, mouse_y)
-            cv2.imshow('video', cv2.resize(frame, (int(ratio*width),500)))
+            if show_video:
+                cv2.imshow('video', cv2.resize(frame, (int(ratio*width),500)))
             vid_capt.write(cv2.resize(frame, (int(ratio*width),500)))
 
             if args.show_preview:
@@ -215,6 +231,7 @@ def main():
                 cv2.putText(frame, "Gaze Cordss: yaw= {:.2f} , pitch= {:.2f} , roll= {:.2f}".format(gaze_vector[0], gaze_vector[1], gaze_vector[2]), (20, 40), cv2.FONT_HERSHEY_COMPLEX,1, (255, 255, 0), 2)
                 
                 cv2.imshow('preview', cv2.resize(frame, (int(ratio*width),500)))
+                cv2.moveWindow("preview", 850, 100)
                 #write it to a video
                 prev_capt.write(cv2.resize(frame, (int(ratio*width),500)))
 
@@ -230,7 +247,8 @@ def main():
     fw.write("|" + '{:^30}'.format('Head Pose Estimation') + '|' + '{:^102}'.format(headPoseModelPath) + '|\n')
     fw.write("|" + '{:^30}'.format('Gaze Estimation') + '|' + '{:^102}'.format(gazeEstimationModelPath) + '|\n')
     fw.write("|" + '{:^30}'.format('device') + '|' + '{:^102}'.format(str(device)) + '|\n')
-    fw.write("|" + '{:^30}'.format('show preview') + '|' + '{:^102}'.format(str(args.show_preview)) + '|\n')
+    fw.write("|" + '{:^30}'.format('show output video') + '|' + '{:^102}'.format(str(show_video)) + '|\n')
+    fw.write("|" + '{:^30}'.format('show preview') + '|' + '{:^102}'.format(str(show_preview)) + '|\n')
     fw.write("|" + '{:^30}'.format('prob threshold') + '|' + '{:^102}'.format(str(prob_threshold)) + '|\n')
     fw.write("|" + '{:^30}'.format('time to load the models (secs)') + '|' + '{:^102}'.format('{:7.3f}'.format(modelLoadTime)) + '|\n')
     fw.write("|" + '{:^30}'.format('inferece time (secs)') + '|' + '{:^102}'.format('{:7.3f}'.format(inferenceTime)) + '|\n')
