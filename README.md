@@ -60,32 +60,32 @@ python3 main.py --help
 The result of the command is presented below
 ![arguments](help.png)
 
-A brieF discussion about each arguments follows <br/>
+A brief discussion about each arguments follows <br/>
 **faceDetectionModel** 
-The path ot the Face Detection Model we downloaded before. It should contain the final file, without any extensions. If it is not provided it will link the the FP32 precision case (src/models/intel/face-detection-adas-binary-0001/FP32-INT1/face-detection-adas-binary-0001)
+The path ot the Face Detection Model we downloaded before. It should contain the final file, without any extensions. If it is not provided it will link the the FP32 precision case (src/models/intel/face-detection-adas-binary-0001/FP32-INT1/face-detection-adas-binary-0001)<br/>
 **facialLandmarksDetectionmodel** 
-The path ot the Facial Landmarks Detection Model we downloaded before. It should contain the final file, without any extensions. If it is not provided it will link the the FP32 precision case (src/models/intel/landmarks-regression-retail-0009/FP32/landmarks-regression-retail-0009)
+The path ot the Facial Landmarks Detection Model we downloaded before. It should contain the final file, without any extensions. If it is not provided it will link the the FP32 precision case (src/models/intel/landmarks-regression-retail-0009/FP32/landmarks-regression-retail-0009)<br/>
 **headPoseModel**
-The path ot the Head Pose Estimation Model we downloaded before. It should contain the final file, without any extensions. If it is not provided it will link the the FP32 precision case (src/models/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001)
+The path ot the Head Pose Estimation Model we downloaded before. It should contain the final file, without any extensions. If it is not provided it will link the the FP32 precision case (src/models/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001)<br/>
 **gazeEstimationModel**
-The path ot the Gaze Estimation Model we downloaded before. It should contain the final file, without any extensions. If it is not provided it will link the the FP32 precision case (src/models/intel/gaze-estimation-adas-0002/FP32/gaze-estimation-adas-0002)
+The path ot the Gaze Estimation Model we downloaded before. It should contain the final file, without any extensions. If it is not provided it will link the the FP32 precision case (src/models/intel/gaze-estimation-adas-0002/FP32/gaze-estimation-adas-0002)<br/>
 **input**
-The path to the input video (default to bin/demo.mp4). If CAM input is needed, we should type `CAM`
+The path to the input video (default to bin/demo.mp4). If CAM input is needed, we should type `CAM`<br/>
 **cpu_extension**
-The path to the CPU extension, which is used in the case there are not supported layers. This is mainly used for compability issues, since the version of OpenVINO we are using does not support it. Also, if we type there `auto` the program will try to find the extension by itself, based on the OS that is used.
+The path to the CPU extension, which is used in the case there are not supported layers. This is mainly used for compability issues, since the version of OpenVINO we are using does not support it. Also, if we type there `auto` the program will try to find the extension by itself, based on the OS that is used.<br/>
 **prob_threshold**
-The probability threshold to accept the results of each model. One value is used for all models, default to 0.6
+The probability threshold to accept the results of each model. One value is used for all models, default to 0.6<br/>
 **device**
-The device on which we will run inference on
+The device on which we will run inference on<br/>
 **show_preview**
-Setting this to True will display a window showing the input of the programm, and with what was tracked by the algorithm (bounding boxes and values reagarding the gaze estimation). As a note, setting this to False, the output video of those attributes will not be made.
+Setting this to True will display a window showing the input of the programm, and with what was tracked by the algorithm (bounding boxes and values reagarding the gaze estimation). As a note, setting this to False, the output video of those attributes will not be made.<br/>
 **show_video**
-Setting this to False will not show the input video. Used for benchmarking mainly
+Setting this to False will not show the input video. Used for benchmarking mainly<br/>
 
-Based on the input, there is a txt file produced, which contains several info regarding the program. The data contained in the file, are shown in the following part.
+Based on the input, there is a txt file produced, which contains several info regarding the program. The data contained in the file, are shown in the following part.<br/>
 
 ## Benchmarks
-The programm was run on my local machine, which is Ubuntu 18.04, running on a VM with 2 cores of Intel I3-6100 CPU, and 4 GB of RAM. There were several test cases, in order to check how the performance changed. As a note, the device was always the CPU, since in a VM the GPU is not supported.
+The programm was run on my local machine, which is Ubuntu 18.04, running on a VM with 2 cores of Intel I3-6100 CPU, and 4 GB of RAM. There were several test cases, in order to check how the performance changed. As a note, the device was always the CPU, since in a VM the GPU is not supported.<br/>
 
 
 
