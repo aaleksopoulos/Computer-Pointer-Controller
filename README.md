@@ -87,14 +87,40 @@ Based on the input, there is a txt file produced, which contains several info re
 ## Benchmarks
 The programm was run on my local machine, which is Ubuntu 18.04, running on a VM with 2 cores of Intel I3-6100 CPU, and 4 GB of RAM. There were several test cases, in order to check how the performance changed. As a note, the device was always the CPU, since in a VM the GPU is not supported.<br/>
 
+**FP32** 
+ |   |   |   |   |   |
+|:-------:|:------:|:------:|:------:|:------:|
+| show output video  | True  | True  | False | False |
+| show preview  | False  | True  | True | False |
+|  time to load the models (secs) | 1.075   | 1.073    | 1.082 | 1.065  |
+| inferece time (secs)  | 1.503  | 1.524  | 1.519 | 1.513 |
+| FPS  | 39   | 39   | 39 | 39 |
+| memory used (Mb)   | 322.562  | 337.941  | 335.664 | 313.754 |
 
+**FP16**
+|   |   |   |   |   |
+|:-------:|:------:|:------:|:------:|:------:|
+| show output video  | True  | True  | False | False |
+| show preview  | False  | True  | True | False |
+|  time to load the models (secs) | 1.478   | 1.360    | 1.314 | 1.319  |
+| inferece time (secs)  | 1.450  | 1.485  |1.457 | 1.454 |
+| FPS  | 41   | 40   | 40 | 41 |
+| memory used (Mb)   | 373.320  | 382.391  | 378.852 | 359.137 |
 
+**ΙΝΤ8**
+|   |   |   |   |   |
+|:-------:|:------:|:------:|:------:|:------:|
+| show output video  | True  | True  | False | False |
+| show preview  | False  | True  | True | False |
+|  time to load the models (secs) | 2.501   | 2.486   | 2.508 | 2.546  |
+| inferece time (secs)  | 1.388  | 1.366  | 1.386 | 1.357 |
+| FPS  | 42   | 43   | 43 | 43 |
+| memory used (Mb)   | 302.379  | 310.844  | 308.426 | 288.547  |
 ## Results
-*TODO:* Discuss the benchmark results and explain why you are getting the results you are getting. For instance, explain why there is difference in inference time for FP32, FP16 and INT8 models.
-
-## Stand Out Suggestions
-This is where you can provide information about the stand out suggestions that you have attempted.
-
+As we can see from the results we presented above, the case of FP32 produces the best results in terms of model load time. This was expected, since the FP32 precision is the best choice for the device we used (CPU). Also, the time to load the model is not affected by the case we are showing or not output videos, which is expected since at this point there is no inference taken place. The worst case in temrs of model loading time is the INT8 scenario. <br/>
+In terms of inference time, we could say that the lower the precision of the model, the better. Also, the more videos we are displaying, the higher is the inference time, which is also expected since the CPU has more tasks to perform. <br/>
+Checking the memory used on the other hand we can see that the more we show to the user, the higher the memory requirments of the program, which is also expected since lower precision means that the data require less memory to be stored.<br/>
+Finally, we could say that the same applies for the FPS of the model, although there the improvement is not that big.
 
 ### Edge Cases
-There will be certain situations that will break your inference flow. For instance, lighting changes or multiple people in the frame. Explain some of the edge cases you encountered in your project and how you solved them to make your project more robust.
+If there are multiple faces tracked by the model, one will be selected randomly. This could be treated as an area of improvement, as we could train the algorithm to track the first face the model identified (or the one with the higher accuracy) and follow it's commands.
